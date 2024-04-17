@@ -1,16 +1,20 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <Windows.h>
-int move_time = 0;
+// X를 만났는지 안만났는지 판별하기 위한 함수
+int judge = 0;
 
+// 이동경로 저장
+int move_time = 0;
 int move_X[100] = { 0, };
 int move_Y[100] = { 0, };
 
+//최단경로 저장
 int move_X_fast[100] = { 0, };
 int move_Y_fast[100] = { 0, };
-
 int time = 0;
 
+//이동을 저장하는 미로
 char map[6][6] =
 {
 	{ '1', '1', '1', '1', '1', '1' },
@@ -21,6 +25,7 @@ char map[6][6] =
 	{ '1', '1', '1', '1', '1', '1' },
 };
 
+//원본을 저장해놓은 미로
 char map_copy[6][6] =
 {
 	{ '1', '1', '1', '1', '1', '1' },
@@ -76,17 +81,26 @@ int searching(int x, int y)
 	map[y][x] = '2';
 	while (1)
 	{
+		//이미 X를 만났다면 종료
+		if (judge == 1)
+			break;
+
+		//이동경로 저장
 		move_X[move_time] = x;
 		move_Y[move_time] = y;
 		move_time++;
 
+		//최단경로 저장
 		move_X_fast[time] = x;
 		move_Y_fast[time] = y;
 		time++;
 
-		if (check_x(x, y) == 1)
+		//X를 만나는지 검사 후 만났다면 종료
+		judge = check_x(x, y);
+		if (judge == 1)
 			break;
 
+		//주변에 경로가 여러개라면 어디로 가는지 탐색후 이동
 		if (chance(x, y) >= 2)
 		{
 			map[y][x] = '2';
@@ -115,17 +129,29 @@ int searching(int x, int y)
 				map[y][x + 1] = '2';
 				x_copy++;
 			}
-			int time_copy = time;
-			searching(x_copy, y_copy);
+
+			int time_copy = time; //time은 전역이기에 searching을 들어가면 값이 변화함으로 따로 저장해놓아야함
+			
+			searching(x_copy, y_copy);//재귀함수
+			
+			//재귀를 통한 searching 함수에서 이미 X를 만났을 수도 있기에 확인후 X를 만났다면 종료
+			if (judge == 1)
+				break;
+			
+			//재귀를 통한 searching 함수에서 X를 못만났다는 것으로 재귀함수에서 받은 경로를 지운다
 			for (int i = time_copy; i < time; i++)
 			{
 				move_X_fast[i] = 0;
 				move_Y_fast[i] = 0;
 			}
+
+			//최단경로 count를 재귀함수 이전으로 돌린다
 			time = time_copy - 1;
 
 		}
 
+
+		//위,아래,왼쪽,오른쪽을 탐색하여 어디로 가야하는지 탐색 후 이동
 		else
 		{
 			if (map[y - 1][x] == '0')
@@ -163,9 +189,11 @@ int searching(int x, int y)
 
 int main()
 {
+	//시작점 선언
 	int start_x = 0;
 	int start_y = 0;
 
+	//시작점을 정하기 위한 미로 한번 보여주기
 	for (int i = 0; i < 6; i++)
 	{
 		for (int j = 0; j < 6; j++)
@@ -173,13 +201,14 @@ int main()
 		printf("\n");
 	}
 
+	//미로 시작점 입력
 	while (1)
 	{
 		printf("x축을 입력하세요(0부터 시작) : ");
 		scanf("%d", &start_x);
 		printf("y축을 입력하세요(0부터 시작) : ");
 		scanf("%d", &start_y);
-		if (map[start_y][start_x] == '0' && start_x == 0)
+		if (map[start_y][start_x] == '0')
 		{
 			printf("프로그램을 시작합니다.\n");
 			break;
@@ -187,10 +216,12 @@ int main()
 		printf("0이고 x가 1인 지점으로 다시 입력해주세요\n");
 	}
 
+	//프로그램 시작
 	searching(start_x, start_y);
 	printf("5초 후 결과가 나옵니다.");
 	Sleep(5000);
 	system("cls");
+	// 결과 출력
 	printf("===================결과 출력===================\n");
 	printf("2는 이동한 좌표입니다.\n");
 	printf("  원본 미로         결과 미로     \n");
@@ -207,9 +238,11 @@ int main()
 	printf("   좌표의 이동 순서표 \n\n");
 	for (int i = 0; i < move_time; i++)
 		printf("%2d 번째 이동 : (%d , %d)\n", i + 1, move_X[i], move_Y[i]);
+	printf("%2d 번째 이동 : (종 료)\n",move_time + 1);
 	printf("\n\n===============================================\n");
 	printf("   좌표의 최단 경로표 \n\n");
 	for (int i = 0; i < time; i++)
 		printf("%2d 번째 이동 : (%d , %d)\n", i + 1, move_X_fast[i], move_Y_fast[i]);
+	printf("%2d 번째 이동 : (종 료)\n", time + 1);
 	return 0;
 }
